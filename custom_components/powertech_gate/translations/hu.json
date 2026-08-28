@@ -1,0 +1,108 @@
+{
+  "title": "Powertech kapu (EyeOpen)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Powertech kapu beállítása",
+        "description": "Válaszd az ajánlott Powertech-fiókos automatikus beállítást, vagy a kézi AWS tanúsítványos módot.",
+        "menu_options": {
+          "account": "Automatikus beállítás Powertech-fiókkal",
+          "manual": "Kézi AWS tanúsítványos beállítás"
+        }
+      },
+      "account": {
+        "title": "Powertech-fiók",
+        "description": "Jelentkezz be a Powertech/EyeOpen fiókoddal. A jelszót csak a beállítás során használjuk, nem tároljuk el. Az integráció UUID-val és AWS IoT végponttal rendelkező Powertech kapueszközöket keres; az ismert modellképességeket automatikusan alkalmazza.",
+        "data": {
+          "username": "Felhasználónév",
+          "password": "Jelszó"
+        }
+      },
+      "device": {
+        "title": "Kapu kiválasztása",
+        "description": "Válaszd ki a hozzáadni kívánt Powertech IoT eszközt.",
+        "data": {
+          "device": "Eszköz"
+        }
+      },
+      "manual": {
+        "title": "Kézi AWS tanúsítványos beállítás",
+        "description": "Speciális tartalék mód meglévő AWS IoT tanúsítványhoz és privát kulcshoz.",
+        "data": {
+          "endpoint": "AWS IoT végpont",
+          "thing_id": "Thing ID / eszköz UUID",
+          "source_id": "Parancs forrásazonosító (src)",
+          "cert_path": "Kliens tanúsítvány elérési útja",
+          "key_path": "Privát kulcs elérési útja",
+          "ca_path": "Root CA elérési útja (opcionális)"
+        }
+      },
+      "reconfigure": {
+        "title": "Powertech-fiók újrabeállítása",
+        "description": "Jelentkezz be újra, hogy új AWS IoT tanúsítvány készüljön ehhez a kapuhoz. A jelszót nem tároljuk.",
+        "data": {
+          "username": "Felhasználónév",
+          "password": "Jelszó"
+        }
+      },
+      "pin": {
+        "title": "Kapu PIN-kód ellenőrzése",
+        "description": "Add meg a kapu 6 számjegyű PIN-kódját. A PIN-t az EyeOpenhez hasonlóan a készülék aktuális WBT állapotával ellenőrizzük, és nem tároljuk el.",
+        "data": {
+          "pin": "Kapu PIN-kód"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Hibás felhasználónév vagy jelszó.",
+      "cannot_connect": "Nem sikerült kapcsolódni a Powertech szerveréhez.",
+      "no_devices": "Nem található kompatibilis Powertech/EyeOpen AWS IoT kapueszköz.",
+      "unknown": "Váratlan hiba történt.",
+      "file_not_found": "Egy vagy több tanúsítványfájl nem található.",
+      "invalid_certificate": "A tanúsítvány, privát kulcs vagy CA nem tölthető be.",
+      "device_not_in_account": "A beállított kapu nem található ebben a Powertech-fiókban.",
+      "invalid_pin": "A megadott PIN-kód nem egyezik a kapu PIN-kódjával.",
+      "invalid_pin_format": "A PIN-kódnak pontosan 6 számjegyből kell állnia."
+    },
+    "abort": {
+      "already_configured": "Ez a Powertech eszköz már be van állítva.",
+      "account_session_lost": "Az ideiglenes Powertech bejelentkezési munkamenet elveszett. Indítsd újra a beállítást.",
+      "certificate_failed": "A Powertech nem adott használható AWS IoT tanúsítványt.",
+      "policy_failed": "Nem sikerült az AWS IoT tanúsítványt a kiválasztott eszközhöz kapcsolni.",
+      "cannot_connect": "A Powertech szerver elérési hibája miatt a beállítás nem fejezhető be.",
+      "provision_failed": "Az automatikus beállítás váratlan hibával megszakadt.",
+      "reconfigure_successful": "A Powertech kapu újrabeállítása sikerült.",
+      "unsupported_protocol": "Az eszköz rendelkezik AWS IoT végponttal, de a Powertech kapuprotokoll szükséges DEV INFO / DEV STATUS shadow mezői nem érkeztek meg. A kapuvezérlés biztonsági okból nem lett engedélyezve."
+    }
+  },
+  "entity": {
+    "cover": {
+      "gate": {
+        "name": "Kapu"
+      },
+      "pedestrian_gate": {
+        "name": "Gyalogos kapu"
+      }
+    },
+    "sensor": {
+      "ip_address": {
+        "name": "IP-cím"
+      },
+      "wifi_mac": {
+        "name": "Wi-Fi MAC"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Powertech kapu beállításai",
+        "description": "Az integráció opcionális működési beállításai.",
+        "data": {
+          "refresh_interval": "Shadow frissítési időköz (másodperc)",
+          "enable_debug_attributes": "Extra hibakeresési attribútumok engedélyezése"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "domain": "powertech_gate",
+  "name": "Powertech Gate (EyeOpen)",
+  "version": "0.9.0",
+  "config_flow": true,
+  "integration_type": "device",
+  "iot_class": "cloud_push",
+  "requirements": [
+    "paho-mqtt==2.1.0"
+  ],
+  "documentation": "https://github.com/miklosandras/powertech-gate-home-assistant",
+  "issue_tracker": "https://github.com/miklosandras/powertech-gate-home-assistant/issues",
+  "codeowners": [
+    "@miklosandras"
+  ]
+}

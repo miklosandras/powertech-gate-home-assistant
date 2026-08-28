@@ -1,0 +1,108 @@
+{
+  "title": "Powertech Gate (EyeOpen)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Powertech Gate",
+        "description": "Choose the recommended Powertech account setup, or use the manual AWS certificate setup.",
+        "menu_options": {
+          "account": "Automatic setup with Powertech account",
+          "manual": "Manual AWS certificate setup"
+        }
+      },
+      "account": {
+        "title": "Powertech account",
+        "description": "Sign in with your Powertech/EyeOpen account. Your password is used only during setup and is not stored. The integration discovers Powertech gate devices with a UUID and AWS IoT endpoint and applies known model capabilities automatically.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "device": {
+        "title": "Select gate",
+        "description": "Select the Powertech IoT device you want to add.",
+        "data": {
+          "device": "Device"
+        }
+      },
+      "manual": {
+        "title": "Manual AWS certificate setup",
+        "description": "Advanced fallback for an existing AWS IoT certificate/private key.",
+        "data": {
+          "endpoint": "AWS IoT endpoint",
+          "thing_id": "Thing ID / device UUID",
+          "source_id": "Command source ID (src)",
+          "cert_path": "Client certificate path",
+          "key_path": "Private key path",
+          "ca_path": "Root CA path (optional)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Powertech account",
+        "description": "Sign in again to regenerate the AWS IoT certificate for this gate. Your password is not stored.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "pin": {
+        "title": "Verify gate PIN",
+        "description": "Enter the gate's six-digit PIN. It is verified against the current WBT shadow in the same way as EyeOpen and is not stored.",
+        "data": {
+          "pin": "Gate PIN"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid username or password.",
+      "cannot_connect": "Could not connect to the Powertech backend.",
+      "no_devices": "No compatible Powertech/EyeOpen AWS IoT gate device was found.",
+      "unknown": "Unexpected error.",
+      "file_not_found": "One or more certificate files were not found.",
+      "invalid_certificate": "The certificate/private key/CA could not be loaded.",
+      "device_not_in_account": "The configured gate is not present in this Powertech account.",
+      "invalid_pin": "The entered PIN does not match the gate PIN.",
+      "invalid_pin_format": "The gate PIN must contain exactly six digits."
+    },
+    "abort": {
+      "already_configured": "This Powertech device is already configured.",
+      "account_session_lost": "The temporary Powertech login session was lost. Start setup again.",
+      "certificate_failed": "Powertech did not return a usable AWS IoT certificate.",
+      "policy_failed": "The AWS IoT certificate policy could not be attached to the selected device.",
+      "cannot_connect": "Could not complete provisioning because the Powertech backend could not be reached.",
+      "provision_failed": "Automatic provisioning failed unexpectedly.",
+      "reconfigure_successful": "Powertech Gate was reconfigured successfully.",
+      "unsupported_protocol": "The device has an AWS IoT endpoint, but the required Powertech gate DEV INFO / DEV STATUS shadow fields were not received. Gate control was not enabled for safety."
+    }
+  },
+  "entity": {
+    "cover": {
+      "gate": {
+        "name": "Gate"
+      },
+      "pedestrian_gate": {
+        "name": "Pedestrian gate"
+      }
+    },
+    "sensor": {
+      "ip_address": {
+        "name": "IP address"
+      },
+      "wifi_mac": {
+        "name": "Wi-Fi MAC"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Powertech Gate options",
+        "description": "Configure non-essential integration behavior.",
+        "data": {
+          "refresh_interval": "Shadow refresh interval (seconds)",
+          "enable_debug_attributes": "Enable extra debug attributes"
+        }
+      }
+    }
+  }
+}
