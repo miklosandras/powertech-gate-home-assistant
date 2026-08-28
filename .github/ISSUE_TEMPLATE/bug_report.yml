@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a problem with Powertech Gate (EyeOpen)
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem.
+
+        **Do not attach passwords, access/refresh tokens, AWS private keys,
+        client certificates, Android keystores, or unredacted Home Assistant backups.**
+        Prefer Home Assistant's generated diagnostics file.
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.x.x"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Powertech Gate version
+      placeholder: "0.9.0"
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Powertech model / DEV INFO
+      placeholder: "PS20088D / P190U,PS20088D,V02"
+
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Setup method
+      options:
+        - Automatic Powertech/EyeOpen account setup
+        - Manual AWS certificate setup
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the expected behavior and what actually happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics / redacted logs
+      description: Attach HA diagnostics or paste only redacted logs.
