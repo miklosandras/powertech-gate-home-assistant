@@ -1,0 +1,60 @@
+name: Device / model support
+description: Request support for another compatible Powertech / EyeOpen controller
+title: "[Model]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form if your Powertech / EyeOpen controller is not detected
+        or does not work correctly with the integration.
+
+        **Do not post passwords, PIN codes, access/refresh tokens, private keys,
+        client certificates, Android keystores, MAC addresses, UUIDs, or other
+        sensitive identifiers.**
+
+  - type: input
+    id: model
+    attributes:
+      label: Device model
+      description: Enter the model shown by the Powertech / EyeOpen app or device label.
+      placeholder: "PS20088D"
+    validations:
+      required: true
+
+  - type: input
+    id: dev_info
+    attributes:
+      label: DEV INFO
+      description: Enter the DEV INFO string if available. Remove unique identifiers first.
+      placeholder: "P190U,PS20088D,V02"
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Powertech Gate version
+      placeholder: "0.9.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.x.x"
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What works and what does not?
+      description: Describe discovery, status updates and gate commands.
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics / redacted logs
+      description: Attach Home Assistant diagnostics or paste only redacted logs.
