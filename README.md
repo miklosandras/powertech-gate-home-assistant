@@ -10,12 +10,13 @@ AWS IoT gate controllers.
 
 - UI-based setup
 - Automatic onboarding with a Powertech/EyeOpen account
+- Support for gates shared to another EyeOpen account (for example a Manager/shared account)
 - Six-digit gate PIN verification compatible with EyeOpen's WBT PIN check
 - Powertech password and gate PIN are used only during setup/reconfigure and are not stored
 - Automatic AWS IoT client certificate provisioning and policy attachment
 - Read-only protocol validation before automatic gate control is enabled
 - Main gate: open, close and stop
-- Pedestrian/partial gate on confirmed models
+- Pedestrian/partial gate on confirmed/known-capable models
 - Live gate position
 - Automatic unavailable/reconnect handling
 - IP address and Wi-Fi MAC diagnostic entities
@@ -33,6 +34,11 @@ A Powertech account device first becomes a candidate when it has:
 - a stable UUID
 - an AWS IoT endpoint
 
+For directly owned devices these fields are returned on the device record.
+For shared devices, Powertech may return a share wrapper and place the actual
+device record inside the vendor field named `devies_info`. Version 0.9.1 and
+newer understands this nested shared-device format.
+
 After provisioning, the integration performs a read-only AWS IoT shadow GET.
 Automatic gate control is enabled only when the device returns both
 `DEV INFO` and `DEV STATUS`.
@@ -47,6 +53,12 @@ No OPEN/CLOSE/STOP/PED command is sent during compatibility validation.
 
 The confirmed reference device reports a `DEV INFO` value compatible with
 `P190U,PS20088D,V02`.
+
+### Additional known models
+
+- `PS20040D` is recognized as pedestrian-capable in the model registry. It has
+  been reported by the community as the backend identity of a PSA500-class
+  controller. Broader community verification is still ongoing.
 
 ### Experimental models
 
@@ -65,8 +77,6 @@ Optional capabilities are not enabled until their behavior is verified.
 ## Installation
 
 ### HACS custom repository
-
-After this project is published on GitHub:
 
 1. Open HACS.
 2. Add this repository as a custom **Integration** repository.
@@ -104,6 +114,10 @@ and restart Home Assistant.
 7. Enter the gate's six-digit PIN when requested.
 8. The integration verifies the PIN against the current WBT shadow and then discards it.
 9. The Home Assistant device/entities are created.
+
+The account may own the gate directly or receive it through EyeOpen sharing.
+Shared/Manager accounts are supported when the vendor returns the gate in the
+`share_devices` bucket with its device metadata in `devies_info`.
 
 The account password, gate PIN, temporary backend access token and refresh
 token are not retained by the integration after onboarding.
@@ -170,7 +184,9 @@ Enable debug logging and look for privacy-safe lines containing:
 Powertech discovery
 ```
 
-A candidate needs a UUID and AWS IoT endpoint.
+A candidate needs a UUID and AWS IoT endpoint. On shared accounts, version
+0.9.1+ also looks inside the nested `devies_info` object returned in
+`share_devices`.
 
 ### Candidate is rejected
 
@@ -213,10 +229,15 @@ repository intentionally does not redistribute vendor logo artwork.
 
 ## Development status
 
-`0.9.0` is the first public release. The confirmed PS20088/PS20088D reference
-hardware has been tested for account onboarding, PIN verification,
-provisioning, shadow validation, open, close, stop, pedestrian open/close,
-live position, unavailable state and automatic reconnect.
+`0.9.1` is a maintenance release following the first public release. It adds
+support for the nested device metadata format used by EyeOpen shared/Manager
+accounts and includes the PS20040D backend model in the pedestrian-capability
+registry.
+
+The PS20088/PS20088D reference hardware remains the fully verified model family
+for account onboarding, PIN verification, provisioning, shadow validation,
+open, close, stop, pedestrian open/close, live position, unavailable state and
+automatic reconnect.
 
 ## License
 

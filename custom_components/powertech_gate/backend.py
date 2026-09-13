@@ -111,9 +111,9 @@ def _request(
         raw = err.read().decode("utf-8", errors="replace")
 
         try:
-            payload = json.loads(raw) if raw else {}
+            json.loads(raw) if raw else {}
         except json.JSONDecodeError:
-            payload = {}
+            pass
 
         # Do not propagate backend response bodies into Home Assistant
         # exceptions/logs. Error bodies are outside our control and may contain
@@ -151,7 +151,6 @@ def login(username: str, password: str) -> str:
     return str(access_token)
 
 
-
 def _fingerprint(value: object) -> str | None:
     """Return a non-reversible short fingerprint for debug logs."""
     if value in (None, ""):
@@ -161,10 +160,70 @@ def _fingerprint(value: object) -> str | None:
     ).hexdigest()[:10]
 
 
+def _decode_embedded_device_info(value):
+    """Return devies_info as a Python object when the backend embeds JSON."""
+    if isinstance(value, (dict, list)):
+        return value
+
+    if isinstance(value, str) and value.strip():
+        try:
+            decoded = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+        if isinstance(decoded, (dict, list)):
+            return decoded
+
+    return None
+
+
+def _iter_nested_device_items(value):
+    """Yield device dictionaries from nested devies_info structures."""
+    decoded = _decode_embedded_device_info(value)
+
+    if isinstance(decoded, dict):
+        yield decoded
+        return
+
+    if isinstance(decoded, list):
+        for item in decoded:
+            if isinstance(item, dict):
+                yield item
+
+
+def _iter_candidate_device_items(item: dict):
+    """Yield a bucket item and any device records nested in devies_info."""
+    if not isinstance(item, dict):
+        return
+
+    yield item
+
+    # Shared devices are returned as a share wrapper. The actual AWS IoT
+    # device record is nested in the vendor's misspelled `devies_info` field.
+    yield from _iter_nested_device_items(item.get("devies_info"))
+
+
 def _redact_device_for_debug(item: dict) -> dict:
     """Return only non-secret device discovery metadata for logs."""
     if not isinstance(item, dict):
         return {}
+
+    embedded = _decode_embedded_device_info(item.get("devies_info"))
+    if isinstance(embedded, dict):
+        embedded_keys = sorted(embedded.keys())
+        embedded_items = 1
+    elif isinstance(embedded, list):
+        embedded_keys = sorted(
+            {
+                key
+                for child in embedded
+                if isinstance(child, dict)
+                for key in child.keys()
+            }
+        )
+        embedded_items = sum(isinstance(child, dict) for child in embedded)
+    else:
+        embedded_keys = None
+        embedded_items = 0
 
     return {
         "keys": sorted(item.keys()),
@@ -210,6 +269,13 @@ def _redact_device_for_debug(item: dict) -> dict:
         "organization_present": bool(
             item.get("organization")
         ),
+        "devies_info_type": (
+            type(item.get("devies_info")).__name__
+            if item.get("devies_info") is not None
+            else None
+        ),
+        "devies_info_items": embedded_items,
+        "devies_info_keys": embedded_keys,
     }
 
 
@@ -245,7 +311,6 @@ def _iter_device_items(value):
                 yield item
 
 
-
 def _extract_custom_names(value) -> dict[str, str]:
     """Best-effort extraction of UUID -> display name from backend custom_info."""
     result: dict[str, str] = {}
@@ -270,6 +335,15 @@ def _extract_custom_names(value) -> dict[str, str]:
 
     walk(value)
     return result
+
+
+def _device_value(item: dict, *keys: str):
+    """Return the first populated value from alternative device field names."""
+    for key in keys:
+        value = item.get(key)
+        if value not in (None, ""):
+            return value
+    return None
 
 
 def get_devices(access_token: str) -> list[PowertechDevice]:
@@ -314,60 +388,105 @@ def get_devices(access_token: str) -> list[PowertechDevice]:
     seen: set[str] = set()
 
     for bucket in ("admin_devices", "user_devices", "share_devices"):
-        for item in _iter_device_items(response.get(bucket)):
-            uuid = str(item.get("uuid") or "").strip()
-            endpoint = str(item.get("iot_endpoint") or "").strip()
+        for raw_item in _iter_device_items(response.get(bucket)):
+            for item in _iter_candidate_device_items(raw_item):
+                uuid = str(
+                    _device_value(
+                        item,
+                        "uuid",
+                        "UID",
+                        "uid",
+                        "device_uuid",
+                    )
+                    or ""
+                ).strip()
+                endpoint = str(
+                    _device_value(
+                        item,
+                        "iot_endpoint",
+                        "awsEndpoint",
+                        "aws_endpoint",
+                        "endpoint",
+                    )
+                    or ""
+                ).strip()
 
-            # Capability-based discovery: UUID + AWS IoT endpoint are required.
-            if not uuid or not endpoint or uuid in seen:
-                continue
+                # Capability-based discovery: UUID + AWS IoT endpoint are required.
+                if not uuid or not endpoint or uuid in seen:
+                    continue
 
-            device_type = (
-                item.get("devies_type")
-                or item.get("devices_type")
-                or item.get("device_type")
-            )
-            product_type = item.get("product_type")
-            uuid_type = item.get("uuid_type")
-
-            friendly_name = custom_names.get(uuid)
-            if friendly_name:
-                label = friendly_name
-            else:
-                model_text = str(device_type or "Powertech Gate")
-                label = f"{model_text} · {uuid[:8]}"
-
-            normalized_device_type = str(device_type or "").upper()
-            pedestrian_supported = normalized_device_type in KNOWN_PEDESTRIAN_MODELS
-            experimental_model = not pedestrian_supported
-
-            devices.append(
-                PowertechDevice(
-                    uuid=uuid,
-                    endpoint=endpoint,
-                    label=label,
-                    device_type=(
-                        str(device_type)
-                        if device_type is not None
-                        else None
-                    ),
-                    product_type=(
-                        str(product_type)
-                        if product_type is not None
-                        else None
-                    ),
-                    uuid_type=(
-                        str(uuid_type)
-                        if uuid_type is not None
-                        else None
-                    ),
-                    pedestrian_supported=pedestrian_supported,
-                    experimental_model=experimental_model,
+                device_type = _device_value(
+                    item,
+                    "devies_type",
+                    "devices_type",
+                    "device_type",
+                    "deviceType",
                 )
-            )
-            seen.add(uuid)
+                product_type = _device_value(
+                    item,
+                    "product_type",
+                    "productType",
+                )
+                uuid_type = _device_value(
+                    item,
+                    "uuid_type",
+                    "uuidType",
+                    "UUIDType",
+                )
 
-    _LOGGER.debug("Powertech device list parsed; candidate_devices=%d", len(devices))
+                friendly_name = custom_names.get(uuid)
+                if not friendly_name and bucket == "share_devices":
+                    # Prefer the share's user-visible name when custom_info
+                    # does not contain a name for this shared device.
+                    share_name = (
+                        raw_item.get("custom_group_name")
+                        or raw_item.get("custom_user_display_name")
+                    )
+                    if isinstance(share_name, str) and share_name.strip():
+                        friendly_name = share_name.strip()
+
+                if friendly_name:
+                    label = friendly_name
+                else:
+                    model_text = str(device_type or "Powertech Gate")
+                    label = f"{model_text} · {uuid[:8]}"
+
+                normalized_device_type = str(device_type or "").upper()
+                pedestrian_supported = (
+                    normalized_device_type in KNOWN_PEDESTRIAN_MODELS
+                )
+                experimental_model = not pedestrian_supported
+
+                devices.append(
+                    PowertechDevice(
+                        uuid=uuid,
+                        endpoint=endpoint,
+                        label=label,
+                        device_type=(
+                            str(device_type)
+                            if device_type is not None
+                            else None
+                        ),
+                        product_type=(
+                            str(product_type)
+                            if product_type is not None
+                            else None
+                        ),
+                        uuid_type=(
+                            str(uuid_type)
+                            if uuid_type is not None
+                            else None
+                        ),
+                        pedestrian_supported=pedestrian_supported,
+                        experimental_model=experimental_model,
+                    )
+                )
+                seen.add(uuid)
+
+    _LOGGER.debug(
+        "Powertech device list parsed; candidate_devices=%d",
+        len(devices),
+    )
     return devices
 
 
@@ -526,7 +645,10 @@ def provision(
         uuid=device.uuid,
     )
 
-    _LOGGER.debug("AWS IoT policy attach completed for device=%s", _fingerprint(device.uuid))
+    _LOGGER.debug(
+        "AWS IoT policy attach completed for device=%s",
+        _fingerprint(device.uuid),
+    )
 
     cert_path, key_path = save_credentials(
         credentials_base_directory,
@@ -535,5 +657,8 @@ def provision(
         private_key=private_key,
     )
 
-    _LOGGER.debug("Automatic Powertech provisioning completed for device=%s", _fingerprint(device.uuid))
+    _LOGGER.debug(
+        "Automatic Powertech provisioning completed for device=%s",
+        _fingerprint(device.uuid),
+    )
     return endpoint, cert_path, key_path

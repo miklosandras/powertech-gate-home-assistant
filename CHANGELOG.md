@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.1
+- Added support for Powertech/EyeOpen devices shared to another account through the `share_devices` bucket.
+- Shared-device discovery now reads the actual gate metadata from the nested vendor field `devies_info`.
+- Supports nested `devies_info` returned as an object, list, or JSON-encoded object/list.
+- Added privacy-safe diagnostics for the shape of nested shared-device metadata without logging UUIDs, endpoints, PINs, credentials, or tokens.
+- Confirmed automatic certificate provisioning, AWS IoT policy attachment, MQTT connection and passive protocol validation from a shared account.
+- Added `PS20040D` to the pedestrian-capable model registry (community-reported PSA500 backend identity; broader verification is ongoing).
+
 ## 0.9.0
 - First public release.
 - Confirmed on Powertech PS20088 / PS20088D reference hardware.
@@ -164,4 +172,3 @@
 
 ## 0.5.1
 - Fixed EyeOpen `app_type_index` to 2.
-
