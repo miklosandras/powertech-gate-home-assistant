@@ -1,15 +1,49 @@
 # Powertech Gate (EyeOpen) for Home Assistant
 
-Unofficial Home Assistant custom integration for compatible Powertech / EyeOpen AWS IoT gate controllers.
+Unofficial Home Assistant custom integration for compatible Powertech / EyeOpen
+AWS IoT gate controllers.
 
-## What's new in 0.9.2
+> This project is community-developed and is not affiliated with or endorsed by
+> Powertech Automation.
 
-- Fixed pedestrian-capability detection for the `PS20040` / `PS20040D` family.
-- Powertech may report `PS20040` during account setup while runtime `DEV INFO` reports `PS20040D`.
-- Both identifiers are now treated as pedestrian-capable.
-- Existing installs should run **Reconfigure** after updating so the stored capability flags are refreshed.
+## Features
+
+- UI-based setup
+- Automatic onboarding with a Powertech/EyeOpen account
+- Support for gates shared to another EyeOpen account (for example a Manager/shared account)
+- Six-digit gate PIN verification compatible with EyeOpen's WBT PIN check
+- Powertech password and gate PIN are used only during setup/reconfigure and are not stored
+- Automatic AWS IoT client certificate provisioning and policy attachment
+- Read-only protocol validation before automatic gate control is enabled
+- Main gate: open, close and stop
+- Pedestrian/partial gate on confirmed/known-capable models
+- Live gate position
+- Automatic unavailable/reconnect handling
+- IP address and Wi-Fi MAC diagnostic entities
+- Home Assistant diagnostics with sensitive fields redacted
+- Hungarian and English translations
+- Manual AWS certificate setup as an advanced fallback
 
 ## Compatibility
+
+Automatic discovery is capability-based rather than tied to the literal
+`WBT01` name.
+
+A Powertech account device first becomes a candidate when it has:
+
+- a stable UUID
+- an AWS IoT endpoint
+
+For directly owned devices these fields are returned on the device record.
+For shared devices, Powertech may return a share wrapper and place the actual
+device record inside the vendor field named `devies_info`. Version 0.9.1 and
+newer understands this nested shared-device format.
+
+After provisioning, the integration performs a read-only AWS IoT shadow GET.
+Automatic gate control is enabled only when the device returns both
+`DEV INFO` and `DEV STATUS`.
+
+No OPEN/CLOSE/STOP/PED command is sent during compatibility validation.
 
 ### Confirmed models
 
@@ -17,24 +51,212 @@ Unofficial Home Assistant custom integration for compatible Powertech / EyeOpen 
 | --- | --- | --- | --- | --- | --- |
 | PS20088 | PS20088D | ✅ | ✅ | ✅ | ✅ |
 
+The confirmed reference device reports a `DEV INFO` value compatible with
+`P190U,PS20088D,V02`.
+
 ### Additional known models
 
-- `PS20040` / `PS20040D` are recognized as pedestrian-capable.
-- Community diagnostics show the backend/runtime naming mismatch described above.
-- This family has been reported as a PSA500-class controller; broader verification is ongoing.
+- `PS20040` / `PS20040D` are recognized as pedestrian-capable in the model registry.
+- Community diagnostics show that the Powertech backend may report `PS20040`
+  during account setup while the runtime device identifies itself as
+  `PS20040D` (for example `A510,PS20040D,V08`).
+- Version 0.9.2 treats both identifiers as the same pedestrian-capable family.
+- This family has been reported by the community as a PSA500-class controller.
+  Broader community verification is still ongoing.
 
-## Shared accounts
+### Experimental models
 
-Version 0.9.1 added support for EyeOpen shared/Manager accounts where the actual device metadata is nested under `share_devices[].devies_info`.
+Other Powertech devices that expose the same AWS/WBT shadow schema may pass
+read-only validation and be added as experimental main-gate devices.
+Optional capabilities are not enabled until their behavior is verified.
 
-## Upgrade
+## Requirements
 
-1. Update through HACS.
-2. Restart Home Assistant.
-3. Run **Reconfigure** on the Powertech Gate integration if you use a PS20040/PS20040D device.
+- Home Assistant 2026.3 or newer
+- A compatible Powertech/EyeOpen account/device, or existing AWS IoT
+  certificate credentials for manual setup
+- Internet access from Home Assistant and the gate controller for the AWS IoT
+  cloud path
 
-The `pedestrian_supported` flag is stored during setup/reconfigure, so this step is required after the capability registry changes.
+## Installation
 
-## Project
+### HACS custom repository
 
-Repository: `miklosandras/powertech-gate-home-assistant`
+1. Open HACS.
+2. Add this repository as a custom **Integration** repository.
+3. Install **Powertech Gate (EyeOpen)**.
+4. Restart Home Assistant.
+5. Go to **Settings → Devices & services → Add integration**.
+6. Search for **Powertech Gate (EyeOpen)**.
+
+### Manual installation
+
+Copy:
+
+```text
+custom_components/powertech_gate
+```
+
+to:
+
+```text
+/config/custom_components/powertech_gate
+```
+
+and restart Home Assistant.
+
+## Configuration
+
+### Recommended: Powertech/EyeOpen account
+
+1. Add **Powertech Gate (EyeOpen)**.
+2. Choose automatic account setup.
+3. Enter the Powertech/EyeOpen username and password.
+4. Select a gate if multiple candidates are returned.
+5. The integration provisions its own AWS IoT certificate.
+6. A read-only shadow validation checks the Powertech gate protocol.
+7. Enter the gate's six-digit PIN when requested.
+8. The integration verifies the PIN against the current WBT shadow and then discards it.
+9. The Home Assistant device/entities are created.
+
+The account may own the gate directly or receive it through EyeOpen sharing.
+Shared/Manager accounts are supported when the vendor returns the gate in the
+`share_devices` bucket with its device metadata in `devies_info`.
+
+The account password, gate PIN, temporary backend access token and refresh
+token are not retained by the integration after onboarding.
+
+### Manual AWS setup
+
+Manual setup is intended for advanced users who already have a valid AWS IoT
+client certificate/private key and know the Powertech Thing ID and command
+source ID.
+
+## Entities
+
+A confirmed PS20088-family device exposes:
+
+- **Gate** cover
+- **Pedestrian gate** cover
+- **IP address** diagnostic sensor
+- **Wi-Fi MAC** diagnostic sensor
+
+Known pedestrian-capable PS20040/PS20040D devices should also expose the
+**Pedestrian gate** cover after updating and running **Reconfigure** so the
+stored capability flags are refreshed.
+
+The device registry also receives runtime metadata such as model and firmware
+after the AWS IoT shadow is received.
+
+## Data updates
+
+The integration uses AWS IoT MQTT push updates for gate state and live
+position. It also performs periodic shadow refreshes.
+
+If the MQTT connection is lost, the entities become unavailable. When
+connectivity returns, the integration reconnects automatically and the
+entities recover without restarting Home Assistant.
+
+For tested PS20088D hardware, pedestrian open/close state also uses the
+device's explicit command ACKs so Home Assistant does not have to wait for the
+next periodic shadow refresh.
+
+## Reconfigure
+
+Use Home Assistant's **Reconfigure** action to sign in again, verify the gate
+PIN and provision a fresh AWS IoT client certificate for the configured gate.
+
+After a model-capability update, running **Reconfigure** is also required to
+refresh stored capability flags such as `pedestrian_supported`.
+
+## Diagnostics
+
+Home Assistant diagnostics are supported. Sensitive identifiers, credential
+paths and network details are redacted. The diagnostic output may retain
+non-secret capability flags such as whether PIN verification succeeded.
+
+Do not publish:
+
+- Powertech/EyeOpen passwords
+- gate PIN codes
+- access or refresh tokens
+- AWS IoT private keys
+- AWS IoT client certificates
+- Android keystores
+- unredacted Home Assistant backups
+
+## Troubleshooting
+
+### Device is not listed during setup
+
+Enable debug logging and look for privacy-safe lines containing:
+
+```text
+Powertech discovery
+```
+
+A candidate needs a UUID and AWS IoT endpoint. On shared accounts, version
+0.9.1+ also looks inside the nested `devies_info` object returned in
+`share_devices`.
+
+### Pedestrian gate is missing after an update
+
+Run **Reconfigure** for the integration. The pedestrian capability is stored in
+the config entry during setup/reconfigure, so existing entries need to be
+refreshed after a model is added to the capability registry.
+
+### Candidate is rejected
+
+Look for:
+
+```text
+Powertech candidate validation
+```
+
+Automatic control requires both `DEV INFO` and `DEV STATUS` from the AWS IoT
+shadow.
+
+### Gate becomes unavailable
+
+Check the Home Assistant log for the MQTT disconnect reason. The integration
+should automatically reconnect when AWS IoT connectivity returns.
+
+### Reporting a new model
+
+Use the **New model compatibility** GitHub issue template and provide only the
+privacy-safe discovery/validation metadata.
+
+## Privacy and security
+
+See `SECURITY.md`.
+
+## Vendor protocol note
+
+Automatic account onboarding reproduces the behavior of the official
+Powertech/EyeOpen Android client, including use of a static OAuth application
+authorization value embedded in that public mobile client. It is not a
+per-user password or token. Vendor-side API or authentication changes may
+therefore break automatic onboarding without notice.
+
+## Trademark notice
+
+Powertech and EyeOpen names may be trademarks of their respective owners.
+They are used here only to identify compatible products/services. This
+repository intentionally does not redistribute vendor logo artwork.
+
+## Development status
+
+`0.9.2` is a maintenance release that fixes pedestrian-capability detection for
+the PS20040/PS20040D family when the Powertech backend and runtime firmware use
+different model identifiers.
+
+Version 0.9.1 added support for EyeOpen shared/Manager accounts.
+
+The PS20088/PS20088D reference hardware remains the fully verified model family
+for account onboarding, PIN verification, provisioning, shadow validation,
+open, close, stop, pedestrian open/close, live position, unavailable state and
+automatic reconnect.
+
+## License
+
+See `LICENSE`.
