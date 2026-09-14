@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.2
+- Fixed pedestrian-capability detection for the PS20040/PS20040D family.
+- The Powertech backend may report `PS20040` during account discovery while runtime `DEV INFO` reports `PS20040D`.
+- Added both `PS20040` and `PS20040D` to the pedestrian-capable model registry.
+- Existing PS20040/PS20040D config entries should run **Reconfigure** after updating so the stored `pedestrian_supported` flag is refreshed.
+- No gate movement protocol changes.
+
 ## 0.9.1
 - Added support for Powertech/EyeOpen devices shared to another account through the `share_devices` bucket.
 - Shared-device discovery now reads the actual gate metadata from the nested vendor field `devies_info`.
