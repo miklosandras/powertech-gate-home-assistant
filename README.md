@@ -157,9 +157,10 @@ If the MQTT connection is lost, the entities become unavailable. When
 connectivity returns, the integration reconnects automatically and the
 entities recover without restarting Home Assistant.
 
-For tested PS20088D hardware, pedestrian open/close state also uses the
-device's explicit command ACKs so Home Assistant does not have to wait for the
-next periodic shadow refresh.
+Pedestrian opening uses `PED OPEN`. Closing a pedestrian/partial opening uses
+the normal `FULL CLOSE` command, matching the official EyeOpen Android app.
+Explicit command ACKs are also used where available so Home Assistant does
+not have to wait for the next periodic shadow refresh.
 
 ## Reconfigure
 
@@ -246,15 +247,16 @@ repository intentionally does not redistribute vendor logo artwork.
 
 ## Development status
 
-`0.9.2` is a maintenance release that fixes pedestrian-capability detection for
-the PS20040/PS20040D family when the Powertech backend and runtime firmware use
-different model identifiers.
+`0.9.3` fixes Pedestrian gate closing to match the official EyeOpen Android app:
+`PED OPEN` is used for pedestrian opening, while closing uses the normal
+`FULL CLOSE` command.
 
-Version 0.9.1 added support for EyeOpen shared/Manager accounts.
+Version 0.9.2 fixed pedestrian-capability detection for PS20040/PS20040D, and
+version 0.9.1 added support for EyeOpen shared/Manager accounts.
 
 The PS20088/PS20088D reference hardware remains the fully verified model family
 for account onboarding, PIN verification, provisioning, shadow validation,
-open, close, stop, pedestrian open/close, live position, unavailable state and
+open, close, stop, pedestrian control, live position, unavailable state and
 automatic reconnect.
 
 ## License

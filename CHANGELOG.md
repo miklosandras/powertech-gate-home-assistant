@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.3
+- Fixed Pedestrian gate closing to match the official EyeOpen Android app behavior.
+- Pedestrian opening continues to use `PED OPEN`.
+- Pedestrian closing now uses the normal `FULL CLOSE` command instead of `PED CLOSE`.
+- Community PS20040/PS20040D logs confirmed `PED CLOSE` is rejected with `NAK PED CLOSE`, while `FULL CLOSE` is accepted with `ACK FULL CLOSE`.
+- APK review confirmed the official app exposes a pedestrian open command but uses the normal close command for closing.
+- No changes to automatic discovery, provisioning, PIN verification, or main-gate control.
+
 ## 0.9.2
 - Fixed pedestrian-capability detection for the PS20040/PS20040D family.
 - The Powertech backend may report `PS20040` during account discovery while runtime `DEV INFO` reports `PS20040D`.

@@ -275,7 +275,9 @@ class PW200Client:
         self._publish_command("PED OPEN")
 
     def pedestrian_close(self) -> None:
-        self._publish_command("PED CLOSE")
+        # Match the official EyeOpen Android app: pedestrian mode is opened
+        # with PED OPEN, but closing uses the normal FULL CLOSE command.
+        self._publish_command("FULL CLOSE")
 
     def _publish_command(self, command: str) -> None:
         if not self._connected.is_set():

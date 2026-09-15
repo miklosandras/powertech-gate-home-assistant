@@ -1,14 +1,28 @@
-POWERTECH GATE 0.9.2
+POWERTECH GATE 0.9.3
 
 Másold ennek a mappának a tartalmát a meglévő repository gyökerébe.
 
 Felülírandó:
 - README.md
 - CHANGELOG.md
-- custom_components/powertech_gate/const.py
+- custom_components/powertech_gate/api.py
 - custom_components/powertech_gate/manifest.json
 
-A backend.py-hoz most nem kell nyúlni.
+Új fájl:
+- RELEASE_NOTES_0.9.3.md
+
+Fontos:
+- A Marek-féle endpoint nélküli discovery teszt NINCS benne ebben a release-ben,
+  mert azt még külön szeretnénk validálni.
+- Ez a release csak a pedestrian close protokolljavítást tartalmazza.
 
 Javasolt commit message:
-Release v0.9.2: fix PS20040 pedestrian detection
+Release v0.9.3: fix pedestrian close command
+
+Javasolt tag:
+0.9.3
+
+GitHub Release title:
+0.9.3
+
+A GitHub Release leírásához használd a RELEASE_NOTES_0.9.3.md tartalmát.
