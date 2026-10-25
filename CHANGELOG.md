@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.15
+- Fix Home Assistant startup waiting on the indefinitely running periodic shadow refresh task (fixes #2).
+- Register periodic shadow refresh as a config-entry-owned background task, with Home Assistant managing its lifecycle during unload.
+- Add offline regression tests for task creation and successful/failed unload paths.
+- No change to gate movement commands, MQTT topics, PIN verification, or safety checks.
+
 ## 0.9.14
 - Add PS17066 and PS17066C to the pedestrian-capable model registry.
 - This enables the Pedestrian gate entity for PS17066-family controllers after reconfiguration refreshes the stored capability flag.
