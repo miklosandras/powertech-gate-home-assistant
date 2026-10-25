@@ -64,6 +64,22 @@ The confirmed reference device reports a `DEV INFO` value compatible with
 - This family has been reported by the community as a PSA500-class controller.
   Broader community verification is still ongoing.
 
+### PS17066 / PS17066C pedestrian support (0.9.14)
+
+Version 0.9.14 adds `PS17066` (backend model) and `PS17066C` (runtime model)
+to the pedestrian-capable model registry. Community diagnostics reported
+`DEV INFO: P500BU,PS17066C,V05`, firmware `2.0`, UART version `1`,
+successful protocol and PIN validation, and pedestrian/partial-open support in
+the official EyeOpen app.
+
+After updating and restarting Home Assistant, run **Reconfigure** on the
+Powertech Gate integration to refresh the saved `pedestrian_supported` flag.
+The **Pedestrian gate** entity should then appear. Test gate movement only
+with the gate area clear. Pedestrian closing uses the existing `FULL CLOSE`
+behavior.
+
+See the [0.9.14 release notes](https://github.com/miklosandras/powertech-gate-home-assistant/releases/tag/0.9.14).
+
 ### Experimental models
 
 Other Powertech devices that expose the same AWS/WBT shadow schema may pass
@@ -141,9 +157,9 @@ A confirmed PS20088-family device exposes:
 - **IP address** diagnostic sensor
 - **Wi-Fi MAC** diagnostic sensor
 
-Known pedestrian-capable PS20040/PS20040D devices should also expose the
-**Pedestrian gate** cover after updating and running **Reconfigure** so the
-stored capability flags are refreshed.
+Known pedestrian-capable PS20040/PS20040D and PS17066/PS17066C devices should
+also expose the **Pedestrian gate** cover after updating and running
+**Reconfigure** so the stored capability flags are refreshed.
 
 The device registry also receives runtime metadata such as model and firmware
 after the AWS IoT shadow is received.
