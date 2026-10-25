@@ -131,10 +131,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if client.is_connected:
                 await hass.async_add_executor_job(client.request_shadow)
 
-    refresh_task = hass.async_create_task(
-        _periodic_shadow_refresh(), f"{DOMAIN}_{entry.entry_id}_shadow_refresh"
+    entry.async_create_background_task(
+        hass,
+        _periodic_shadow_refresh(),
+        f"{DOMAIN}_{entry.entry_id}_shadow_refresh",
     )
-    hass.data[DOMAIN][entry.entry_id + "_refresh_task"] = refresh_task
     return True
 
 
@@ -142,9 +143,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload Powertech PW200."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        refresh_task = hass.data[DOMAIN].pop(entry.entry_id + "_refresh_task", None)
-        if refresh_task:
-            refresh_task.cancel()
         remove_listener = hass.data[DOMAIN].pop(
             entry.entry_id + "_remove_registry_listener", None
         )
