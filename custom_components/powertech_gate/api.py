@@ -510,10 +510,6 @@ class PW200Client:
             self._pending_subscriptions.clear()
             self._shadow_subscription_status.clear()
             self._last_shadow_get_at = 0.0
-            self._system_status_requested = False
-            self._system_status_ack_received = False
-            self._system_status_ack_format_valid = False
-            self._system_status_publish_failures = 0
 
         self._connected.set()
         self._last_disconnect_reason = None
