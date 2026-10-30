@@ -629,7 +629,7 @@ class PW200Client:
             with self._shadow_lock:
                 self._passive_command_ack_messages += 1
                 command_ack_count = self._passive_command_ack_messages
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "Powertech passive MQTT activity observed; "
                 "topic_kind=command_ack count=%d",
                 command_ack_count,
@@ -646,7 +646,7 @@ class PW200Client:
             with self._shadow_lock:
                 self._passive_position_messages += 1
                 position_count = self._passive_position_messages
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "Powertech passive MQTT activity observed; "
                 "topic_kind=position count=%d",
                 position_count,
