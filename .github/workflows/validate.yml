@@ -43,3 +43,5 @@ jobs:
           python-version: "3.14"
       - name: Compile integration
         run: python -m compileall -q custom_components/powertech_gate
+      - name: Run offline regression tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
