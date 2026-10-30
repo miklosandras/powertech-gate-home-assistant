@@ -1,0 +1,80 @@
+[
+  {
+    "mode": "full",
+    "replies": [
+      {
+        "status": "PED CLOSED",
+        "position": 1
+      },
+      {
+        "status": "PED OPENING",
+        "position": 2
+      },
+      {
+        "status": "PED OPENING",
+        "position": 28
+      },
+      {
+        "status": "PED OPENING",
+        "position": 52
+      },
+      {
+        "status": "PED OPENING",
+        "position": 83
+      },
+      {
+        "status": "PED OPENED",
+        "position": 98
+      },
+      {
+        "status": "PED CLOSING",
+        "position": 82
+      },
+      {
+        "status": "PED CLOSING",
+        "position": 54
+      },
+      {
+        "status": "PED CLOSING",
+        "position": 23
+      },
+      {
+        "status": "PED CLOSING",
+        "position": 3
+      },
+      {
+        "status": "PED CLOSED",
+        "position": 0
+      }
+    ]
+  },
+  {
+    "mode": "pedestrian",
+    "replies": [
+      {
+        "status": "PED CLOSED",
+        "position": 0
+      },
+      {
+        "status": "PED OPENING",
+        "position": 10
+      },
+      {
+        "status": "SINGLE STOPPED",
+        "position": 26
+      },
+      {
+        "status": "PED CLOSING",
+        "position": 20
+      },
+      {
+        "status": "PED CLOSING",
+        "position": 4
+      },
+      {
+        "status": "PED CLOSED",
+        "position": 0
+      }
+    ]
+  }
+]

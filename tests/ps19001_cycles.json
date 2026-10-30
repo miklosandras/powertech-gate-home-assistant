@@ -1,0 +1,221 @@
+[
+  {
+    "name": "physical_pedestrian",
+    "messages": [
+      {
+        "kind": "shadow_get",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "position",
+        "position_payload": 20
+      },
+      {
+        "kind": "shadow_update",
+        "status_bytes": [
+          0,
+          0,
+          32,
+          26,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "position",
+        "position_payload": 40
+      },
+      {
+        "kind": "shadow_update",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "position",
+        "position_payload": 20
+      },
+      {
+        "kind": "position",
+        "position_payload": 0
+      },
+      {
+        "kind": "shadow_get",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "physical_full",
+    "messages": [
+      {
+        "kind": "shadow_get",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "position",
+        "position_payload": 40
+      },
+      {
+        "kind": "position",
+        "position_payload": 80
+      },
+      {
+        "kind": "position",
+        "position_payload": 100
+      },
+      {
+        "kind": "position",
+        "position_payload": 80
+      },
+      {
+        "kind": "position",
+        "position_payload": 40
+      },
+      {
+        "kind": "position",
+        "position_payload": 20
+      },
+      {
+        "kind": "position",
+        "position_payload": 0
+      },
+      {
+        "kind": "shadow_get",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ha_pedestrian",
+    "messages": [
+      {
+        "kind": "shadow_get",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "command_ack",
+        "ack": "ACK PED OPEN"
+      },
+      {
+        "kind": "position",
+        "position_payload": 20
+      },
+      {
+        "kind": "shadow_update",
+        "status_bytes": [
+          0,
+          0,
+          32,
+          26,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "position",
+        "position_payload": 40
+      },
+      {
+        "kind": "shadow_update",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "kind": "position",
+        "position_payload": 20
+      },
+      {
+        "kind": "position",
+        "position_payload": 0
+      },
+      {
+        "kind": "shadow_get",
+        "status_bytes": [
+          0,
+          0,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  }
+]

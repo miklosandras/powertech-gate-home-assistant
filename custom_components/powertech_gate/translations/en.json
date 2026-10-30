@@ -90,6 +90,14 @@
       },
       "wifi_mac": {
         "name": "Wi-Fi MAC"
+      },
+      "position": {
+        "name": "Controller position"
+      }
+    },
+    "binary_sensor": {
+      "gate_state": {
+        "name": "Gate state"
       }
     }
   },

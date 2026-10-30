@@ -36,7 +36,7 @@ def _load_integration():
     sys.modules["homeassistant.config_entries"] = config_entries
 
     const = types.ModuleType("homeassistant.const")
-    const.Platform = types.SimpleNamespace(COVER="cover", SENSOR="sensor")
+    const.Platform = types.SimpleNamespace(COVER="cover", SENSOR="sensor", BINARY_SENSOR="binary_sensor")
     sys.modules["homeassistant.const"] = const
 
     exceptions = types.ModuleType("homeassistant.exceptions")
@@ -89,6 +89,11 @@ class FakeClient:
     def __init__(self):
         self.started = self.stopped = self.listener_removed = False
 
+    async def poll(self, executor): pass
+
+    @property
+    def status_poller(self): return types.SimpleNamespace(run=self.poll)
+
     def start(self): self.started = True
     def stop(self): self.stopped = True
     def add_listener(self, _listener):
@@ -138,10 +143,13 @@ class BackgroundRefreshTests(unittest.IsolatedAsyncioTestCase):
     async def test_refresh_is_entry_owned_background_task(self):
         hass = FakeHass()
         self.assertTrue(await self.integration.async_setup_entry(hass, self.entry))
-        self.assertEqual(len(self.entry.background_tasks), 1)
+        self.assertEqual(len(self.entry.background_tasks), 2)
         task_hass, _coroutine, name = self.entry.background_tasks[0]
         self.assertIs(task_hass, hass)
         self.assertEqual(name, "powertech_gate_entry-id_shadow_refresh")
+        self.assertEqual(self.entry.background_tasks[1][2], "powertech_gate_entry-id_status_poll")
+        self.assertTrue(self.client.status_feedback_enabled)
+        self.assertIn("binary_sensor", hass.config_entries.forwarded[1])
         self.assertNotIn("entry-id_refresh_task", hass.data["powertech_gate"])
 
     async def test_successful_unload_cleans_runtime_resources(self):

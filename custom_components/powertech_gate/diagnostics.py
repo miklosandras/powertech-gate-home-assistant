@@ -59,6 +59,9 @@ async def async_get_config_entry_diagnostics(
             "ip_address": state.ip_address,
             "wifi_mac": state.wifi_mac,
             "position": state.position,
+            "status_text": state.status_text,
+            "opening_mode": state.opening_mode,
+            "live_feedback_available": client.live_feedback_available,
             "raw_status": state.raw_status,
             "mqtt_connected": client.is_connected,
             "last_disconnect_reason": client.last_disconnect_reason,
@@ -69,4 +72,5 @@ async def async_get_config_entry_diagnostics(
     return {
         "config_entry": config_entry,
         "device": device,
+        "status_polling": client.status_poller.snapshot(),
     }

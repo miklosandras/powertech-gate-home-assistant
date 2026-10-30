@@ -14,6 +14,9 @@ import uuid
 
 import paho.mqtt.client as mqtt
 
+from .legacy_status import parse_status_reply
+from .status_feedback import StatusPoller
+
 from .const import (
     DEFAULT_PORT,
     STATE_CLOSED,
@@ -44,6 +47,14 @@ class PW200State:
     device_info: str | None = None
     raw_status: str | None = None
     last_ack: str | None = None
+    # PS19001 shadow status does not reliably represent movement. Keep the
+    # event-based position separate from shadow-derived endpoint estimates.
+    position_received: bool = False
+    pedestrian_open_pending: bool = False
+    status_received: bool = False
+    status_text: str | None = None
+    opening_mode: str = "unknown"
+    feedback_updated_at: float | None = None
 
 
 class PW200Client:
@@ -73,6 +84,9 @@ class PW200Client:
         self.device_type = device_type
 
         self.state = PW200State()
+        self.status_poller = StatusPoller(self)
+        self.status_feedback_enabled = False
+        self._system_status_generation = 0
         self._listeners: set[Callable[[], None]] = set()
         self._connected = threading.Event()
         self._last_disconnect_reason: str | None = None
@@ -187,6 +201,11 @@ class PW200Client:
         if self.device_type:
             return self.device_type
         return "WBT01"
+
+    @property
+    def uses_position_feedback(self) -> bool:
+        """Use the validated position stream for PS19001 cover feedback."""
+        return self.display_model == "PS19001"
 
     @property
     def display_name(self) -> str:
@@ -412,6 +431,70 @@ class PW200Client:
             "pin_verification": self._decoded_pin is not None,
         }
 
+    @property
+    def system_status_generation(self) -> int:
+        """Count valid fresh legacy status replies without exposing payloads."""
+        with self._shadow_lock:
+            return self._system_status_generation
+
+    @property
+    def uses_access_mode_feedback(self) -> bool:
+        return (self.status_feedback_enabled and self.uses_position_feedback
+                and self.state.uart_version == 1)
+
+    @property
+    def live_feedback_available(self) -> bool:
+        stamp = self.state.feedback_updated_at
+        return stamp is not None and time.monotonic() - stamp <= 60
+
+    @property
+    def physical_gate_closed(self) -> bool | None:
+        if not self.live_feedback_available:
+            return None
+        if self.state.status_received:
+            return self.state.gate_state == STATE_CLOSED
+        return self.state.position == 0 if self.state.position_received else None
+
+    def _apply_live_status(self, parsed: dict) -> None:
+        """Apply verified legacy feedback without treating PED as a mode."""
+        text, position = parsed["status"], parsed["status_position"]
+        word = text.rsplit(" ", 1)[-1]
+        mode = self.state.opening_mode
+        if word == "CLOSED" and position <= 5:
+            gate_state, mode = STATE_CLOSED, "closed"
+        elif word == "OPENING":
+            gate_state = STATE_OPENING
+            if self.physical_gate_closed is True:
+                mode = "unknown"
+        elif word in ("CLOSING", "CLOSEING"):
+            gate_state = STATE_CLOSING
+        elif word in ("OPEN", "OPENED"):
+            gate_state = STATE_OPEN
+            if position >= 95:
+                mode = "full"
+        else:
+            gate_state = STATE_STOPPED
+            if text == "SINGLE STOPPED" and position > 5:
+                mode = "pedestrian"
+        self.state = replace(
+            self.state, gate_state=gate_state, position=position,
+            position_received=True, status_received=True, status_text=text,
+            opening_mode=mode, feedback_updated_at=time.monotonic(),
+            pedestrian_open_pending=False,
+        )
+
+    def request_fresh_system_status(self) -> bool:
+        """Publish only the verified PS19001 UART1 read-only command."""
+        if not self.uses_access_mode_feedback or not self.is_connected:
+            return False
+        with self._shadow_lock:
+            if self._shadow_subscription_status.get("command_ack") is not True:
+                return False
+        info = self._mqtt.publish(
+            self._topic_cmd_rx, payload=f"c=READ STATUS;src={self.source_id}", qos=0,
+        )
+        return info.rc == mqtt.MQTT_ERR_SUCCESS
+
     def open_gate(self) -> None:
         self._publish_command("FULL OPEN")
 
@@ -635,9 +718,23 @@ class PW200Client:
                 command_ack_count,
             )
 
+            parsed = parse_status_reply(payload)
+            if (parsed.get("ack") == "ACK STATUS" and 0 <= parsed["status_position"] <= 100
+                    and not getattr(msg, "retain", False)):
+                with self._shadow_lock:
+                    self._system_status_generation += 1
+                if self.uses_access_mode_feedback:
+                    self._apply_live_status(parsed)
+
             self.state = replace(
                 self.state,
                 last_ack=payload,
+                pedestrian_open_pending=(
+                    True if self.uses_position_feedback
+                    and not getattr(msg, "retain", False)
+                    and payload.split(";", 1)[0].strip() == "ACK PED OPEN"
+                    else self.state.pedestrian_open_pending
+                ),
             )
             self._notify()
             return
@@ -653,17 +750,10 @@ class PW200Client:
             )
 
             try:
-                position = max(
-                    0,
-                    min(
-                        100,
-                        int(
-                            payload.strip().replace(
-                                "%",
-                                "",
-                            )
-                        ),
-                    ),
+                value = payload.strip()
+                position = int(
+                    value.removesuffix("%") if self.uses_position_feedback
+                    else value.replace("%", "")
                 )
             except ValueError:
                 _LOGGER.warning(
@@ -671,9 +761,28 @@ class PW200Client:
                 )
                 return
 
+            if self.uses_position_feedback and (
+                not 0 <= position <= 100 or getattr(msg, "retain", False)
+            ):
+                # Retained values have no timestamp and cannot supersede a
+                # live observation or a just-acknowledged command.
+                return
+            position = max(0, min(100, position))
+
             self.state = replace(
                 self.state,
                 position=position,
+                gate_state=((STATE_CLOSED if position == 0 else STATE_UNKNOWN)
+                            if self.uses_access_mode_feedback else self.state.gate_state),
+                position_received=True,
+                pedestrian_open_pending=False,
+                status_received=False,
+                status_text=None,
+                opening_mode=("closed" if position == 0 else (
+                    "unknown" if self.state.opening_mode == "closed" else self.state.opening_mode
+                )),
+                feedback_updated_at=(time.monotonic() if self.uses_access_mode_feedback
+                                     else self.state.feedback_updated_at),
             )
             self._notify()
             return
@@ -735,18 +844,19 @@ class PW200Client:
         position = self.state.position
 
         if isinstance(raw_status, str):
-            gate_state = self.decode_gate_state(
-                raw_status
-            )
+            if not (self.uses_access_mode_feedback and self.state.position_received):
+                gate_state = self.decode_gate_state(raw_status)
 
             # Position topic is event based, so force
             # known physical end positions.
-            if gate_state == STATE_CLOSED:
+            preserve_position = self.uses_position_feedback and self.state.position_received
+            if gate_state == STATE_CLOSED and not preserve_position:
                 position = 0
-            elif gate_state == STATE_OPEN:
+            elif gate_state == STATE_OPEN and not preserve_position:
                 position = 100
 
-        self.state = PW200State(
+        self.state = replace(
+            self.state,
             gate_state=gate_state,
             position=position,
             online=reported.get(

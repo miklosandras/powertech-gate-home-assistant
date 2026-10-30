@@ -29,7 +29,7 @@ from .const import (
 )
 from .device import format_mac
 
-PLATFORMS = [Platform.COVER, Platform.SENSOR]
+PLATFORMS = [Platform.COVER, Platform.SENSOR, Platform.BINARY_SENSOR]
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -81,6 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ) from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = client
+    client.status_feedback_enabled = True
 
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -135,6 +136,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         _periodic_shadow_refresh(),
         f"{DOMAIN}_{entry.entry_id}_shadow_refresh",
+    )
+    entry.async_create_background_task(
+        hass, client.status_poller.run(hass.async_add_executor_job),
+        f"{DOMAIN}_{entry.entry_id}_status_poll",
     )
     return True
 

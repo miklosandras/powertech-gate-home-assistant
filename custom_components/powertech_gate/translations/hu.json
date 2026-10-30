@@ -90,6 +90,14 @@
       },
       "wifi_mac": {
         "name": "Wi-Fi MAC"
+      },
+      "position": {
+        "name": "Vezérlő pozíciója"
+      }
+    },
+    "binary_sensor": {
+      "gate_state": {
+        "name": "Kapu állapota"
       }
     }
   },
