@@ -339,7 +339,6 @@ class PW200Client:
             if self._shadow_subscribed.is_set():
                 with self._shadow_lock:
                     last_request = self._last_shadow_get_at
-                    rejected_count = self._shadow_get_rejected
 
                 if (
                     not last_request
@@ -348,8 +347,6 @@ class PW200Client:
                 ):
                     self.request_shadow()
 
-                # 0.9.11 is intentionally passive after a shadow 404.
-                _ = rejected_count
 
             time.sleep(0.1)
 
@@ -637,8 +634,6 @@ class PW200Client:
                 "topic_kind=command_ack count=%d",
                 command_ack_count,
             )
-
-            _LOGGER.debug("Powertech MQTT command-ack message received")
 
             self.state = replace(
                 self.state,
