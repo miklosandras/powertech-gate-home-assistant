@@ -224,6 +224,54 @@ class ShadowDiagnosticsTests(unittest.TestCase):
         ))
         self.assertEqual(self.mqtt.published, [])
 
+    def test_successful_reconnect_is_info_not_warning(self):
+        with self.assertLogs(api.__name__, level='INFO') as captured:
+            self.connect()
+            self.connect()
+        self.assertTrue(any(
+            record.levelname == 'INFO'
+            and 'Powertech MQTT reconnected' in record.getMessage()
+            for record in captured.records
+        ))
+        self.assertFalse(any(record.levelname == 'WARNING' for record in captured.records))
+        self.assertEqual(self.mqtt.published, [])
+
+    def test_passive_validation_start_and_reconnect_attempt_are_debug(self):
+        from unittest import mock
+
+        self.mqtt.reconnect = lambda: 0
+        with mock.patch.object(api.time, 'monotonic', side_effect=[100.0, 101.0, 102.0, 131.0]):
+            with mock.patch.object(api.time, 'sleep', return_value=None):
+                with self.assertLogs(api.__name__, level='DEBUG') as captured:
+                    valid, _ = self.client.wait_for_shadow_capabilities(0.01)
+        self.assertFalse(valid)
+        self.assertTrue(any(
+            record.levelname == 'DEBUG'
+            and 'observation window started' in record.getMessage()
+            for record in captured.records
+        ))
+        self.assertTrue(any(
+            record.levelname == 'DEBUG'
+            and 'reconnect attempt; attempt=' in record.getMessage()
+            for record in captured.records
+        ))
+        self.assertTrue(any(
+            record.levelname == 'WARNING'
+            and 'shadow validation timed out' in record.getMessage()
+            for record in captured.records
+        ))
+        self.assertEqual(self.client._manual_reconnect_attempts, 1)
+        self.assertEqual(self.mqtt.published, [])
+
+    def test_disconnect_remains_warning(self):
+        with self.assertLogs(api.__name__, level='WARNING') as captured:
+            self.client._on_disconnect(self.mqtt, None, None, 'normal', None)
+        self.assertTrue(any(
+            'Powertech MQTT disconnected' in record.getMessage()
+            for record in captured.records
+        ))
+        self.assertEqual(self.mqtt.published, [])
+
     def test_non_response_subacks_do_not_trigger_get(self):
         self.connect()
         self.ack('/position')
