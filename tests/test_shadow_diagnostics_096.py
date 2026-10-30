@@ -187,6 +187,43 @@ class ShadowDiagnosticsTests(unittest.TestCase):
         self.assertEqual(len(self.shadow_requests()), 1)
         self.assertNotIn('/wbt01Rx', self.mqtt.published[0][0])
 
+    def test_routine_ack_and_position_activity_is_debug_only(self):
+        ack = types.SimpleNamespace(
+            topic=self.client._topic_cmd_tx,
+            payload=b'ACK FULL OPEN',
+        )
+        position = types.SimpleNamespace(
+            topic=self.client._topic_position,
+            payload=b'45%',
+        )
+        with self.assertLogs(api.__name__, level='DEBUG') as captured:
+            self.client._on_message(self.mqtt, None, ack)
+            self.client._on_message(self.mqtt, None, position)
+        self.assertEqual(self.client.state.last_ack, 'ACK FULL OPEN')
+        self.assertEqual(self.client.state.position, 45)
+        self.assertEqual(self.client._passive_command_ack_messages, 1)
+        self.assertEqual(self.client._passive_position_messages, 1)
+        self.assertTrue(all(record.levelname == 'DEBUG' for record in captured.records))
+        self.assertTrue(any('topic_kind=command_ack' in line for line in captured.output))
+        self.assertTrue(any('topic_kind=position' in line for line in captured.output))
+        self.assertEqual(self.mqtt.published, [])
+
+    def test_invalid_position_still_warns_without_state_update(self):
+        msg = types.SimpleNamespace(
+            topic=self.client._topic_position,
+            payload=b'not-a-position',
+        )
+        with self.assertLogs(api.__name__, level='DEBUG') as captured:
+            self.client._on_message(self.mqtt, None, msg)
+        self.assertEqual(self.client._passive_position_messages, 1)
+        self.assertIsNone(self.client.state.position)
+        self.assertTrue(any(
+            record.levelname == 'WARNING'
+            and 'Invalid Powertech position payload' in record.getMessage()
+            for record in captured.records
+        ))
+        self.assertEqual(self.mqtt.published, [])
+
     def test_non_response_subacks_do_not_trigger_get(self):
         self.connect()
         self.ack('/position')
