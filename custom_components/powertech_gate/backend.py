@@ -644,10 +644,12 @@ def create_user_certificate(
         )
 
     endpoint_text = str(endpoint)
-    _LOGGER.warning(
+    endpoint_matches_official = endpoint_text == OFFICIAL_WBT_AWS_ENDPOINT
+    log_endpoint = _LOGGER.debug if endpoint_matches_official else _LOGGER.warning
+    log_endpoint(
         "Powertech AWS endpoint diagnostic; "
         "certificate_endpoint_matches_official=%s certificate_region=%s",
-        endpoint_text == OFFICIAL_WBT_AWS_ENDPOINT,
+        endpoint_matches_official,
         _endpoint_region(endpoint_text),
     )
 
