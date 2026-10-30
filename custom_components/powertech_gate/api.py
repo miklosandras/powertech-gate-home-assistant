@@ -291,7 +291,7 @@ class PW200Client:
         """
         timeout = max(timeout, 30.0)
         deadline = time.monotonic() + timeout
-        _LOGGER.warning(
+        _LOGGER.debug(
             "Powertech passive MQTT observation window started; "
             "duration_seconds=%d",
             int(timeout),
@@ -316,7 +316,7 @@ class PW200Client:
                         self._manual_reconnect_attempts += 1
                         reconnect_attempt = self._manual_reconnect_attempts
 
-                    _LOGGER.warning(
+                    _LOGGER.debug(
                         "Powertech MQTT reconnect attempt; attempt=%d",
                         reconnect_attempt,
                     )
@@ -495,7 +495,7 @@ class PW200Client:
             successful_connects = self._successful_connects
 
         if successful_connects > 1:
-            _LOGGER.warning(
+            _LOGGER.info(
                 "Powertech MQTT reconnected; reconnect_count=%d",
                 successful_connects - 1,
             )
