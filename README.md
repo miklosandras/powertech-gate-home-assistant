@@ -50,9 +50,19 @@ No OPEN/CLOSE/STOP/PED command is sent during compatibility validation.
 | Backend model | Runtime model | Main gate | Stop | Position | Pedestrian |
 | --- | --- | --- | --- | --- | --- |
 | PS20088 | PS20088D | ✅ | ✅ | ✅ | ✅ |
+| PS17066 | PS17066C | ✅ | ✅ | ✅ | ✅ |
 
 The confirmed reference device reports a `DEV INFO` value compatible with
 `P190U,PS20088D,V02`.
+
+Community confirmation for `PS17066` / `PS17066C`: main-gate open,
+close and stop were reported working, and after the 0.9.14 pedestrian-capability
+update, all requested features were confirmed working in Home Assistant
+([model report and follow-up](https://github.com/miklosandras/powertech-gate-home-assistant/issues/1#issuecomment-6335448409)).
+Redacted diagnostics confirm account setup, protocol and PIN validation,
+a connected controller and `DEV INFO: P500BU,PS17066C,V05` (firmware `2.0`,
+UART `1`).
+
 
 ### Additional known models
 
